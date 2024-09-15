@@ -186,7 +186,7 @@ class Query(graphene.ObjectType):
     
     book_count_in_the_library = graphene.String()
     book_requests_today = graphene.List(BookRequestType)
-    book_with_most_requests_today =  graphene.Field(BookType)
+    book_with_most_requests_today =  graphene.List(BookType)
 
     @admin_or_staff_required
     def resolve_book_count_in_the_library(root, info):
@@ -198,7 +198,6 @@ class Query(graphene.ObjectType):
     
     @admin_or_staff_required
     def resolve_book_with_most_requests_today(root, info):
-        print(date.today())
         books_requested_today = BookRequest.objects.filter(created_time__date=date.today()) \
             .values('book__title', 'book__id') \
             .annotate(count=Count('book__title')) \
@@ -212,12 +211,10 @@ class Query(graphene.ObjectType):
                 if book['count'] == max_number_of_requested_book_today:
                     most_book_requested_today_ids.append(book['book__id'])
             
-            return Books.objects.filter(id=most_book_requested_today_ids[0]).first()
+            return Books.objects.filter(id__in=most_book_requested_today_ids)
         
         return None
 
 
 
 schema = graphene.Schema(mutation=Mutation, query=Query)
-
-
